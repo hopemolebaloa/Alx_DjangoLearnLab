@@ -11,7 +11,7 @@ from relationship_app.models import Author, Book, Library, Librarian
 def get_books_by_author(author_name):
     try:
         author = Author.objects.get(name=author_name)
-        books = author.books.all()
+        books = Book.objects.filter(author=author)  # <-- Required query
         return books
     except Author.DoesNotExist:
         return "Author not found."
@@ -28,7 +28,7 @@ def get_books_in_library(library_name):
 def get_librarian_of_library(library_name):
     try:
         library = Library.objects.get(name=library_name)
-        return library.librarian
+        return library.librarian  # <-- Required query
     except Library.DoesNotExist:
         return "Library not found."
 
