@@ -1,6 +1,7 @@
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.shortcuts import render, redirect
+
 
 # Login View
 def login_view(request):
@@ -30,4 +31,5 @@ def register_view(request):
     else:
         form = UserCreationForm()
     return render(request, "relationship_app/register.html", {"form": form})
+
 
