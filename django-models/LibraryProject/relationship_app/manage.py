@@ -1,15 +1,17 @@
-from django.contrib.auth.models import User
-from relationship_app.models import UserProfile
+ffrom django.contrib.auth.models import User, Permission
+from django.contrib.contenttypes.models import ContentType
+from relationship_app.models import Book
 
-# Create a test user
-user = User.objects.create_user(username="admin_user", password="admin123")
-user.userprofile.role = "Admin"
-user.userprofile.save()
+# Get content type for Book model
+content_type = ContentType.objects.get_for_model(Book)
 
-librarian = User.objects.create_user(username="librarian_user", password="librarian123")
-librarian.userprofile.role = "Librarian"
-librarian.userprofile.save()
+# Define permissions
+add_perm = Permission.objects.get(codename="can_add_book", content_type=content_type)
+change_perm = Permission.objects.get(codename="can_change_book", content_type=content_type)
+delete_perm = Permission.objects.get(codename="can_delete_book", content_type=content_type)
 
-member = User.objects.create_user(username="member_user", password="member123")
-member.userprofile.role = "Member"
-member.userprofile.save()
+# Assign permissions to a user (Example: admin)
+user = User.objects.get(username="admin_user")
+user.user_permissions.add(add_perm, change_perm, delete_perm)
+user.save()
+
