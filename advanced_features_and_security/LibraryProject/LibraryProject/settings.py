@@ -124,3 +124,30 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "bookshelf.CustomUser"
+import os
+
+# SECURITY: Set DEBUG to False in production
+DEBUG = False  # Ensure this is False in production
+
+# SECURITY: Restrict allowed hosts
+ALLOWED_HOSTS = ['yourdomain.com', '127.0.0.1']
+
+# SECURITY: Prevent XSS attacks
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = 'DENY'
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# SECURITY: Secure Cookies
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+
+# SECURITY: Enable HTTP Strict Transport Security (HSTS)
+SECURE_HSTS_SECONDS = 31536000  # 1 year
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+# SECURITY: Enforce HTTPS
+SECURE_SSL_REDIRECT = True
+
+# SECURITY: Disable default admin interface if unnecessary
+INSTALLED_APPS.remove('django.contrib.admin') if os.getenv('DISABLE_ADMIN') else None
