@@ -2,6 +2,8 @@ from django.contrib.auth.decorators import permission_required
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Book
 from .forms import BookForm
+from django.shortcuts import render, redirect
+from .forms import ExampleForm  # Import the ExampleForm
 
 # View Book Details (Restricted to users with 'can_view' permission)
 @permission_required('relationship_app.can_view', raise_exception=True)
@@ -52,4 +54,18 @@ def book_list(request):
     """
     books = Book.objects.all()
     return render(request, "bookshelf/book_list.html", {"books": books})
+
+def example_view(request):
+    """
+    View for handling ExampleForm submissions.
+    """
+    if request.method == "POST":
+        form = ExampleForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect("book_list")  # Redirect after success
+    else:
+        form = ExampleForm()
+
+    return render(request, "bookshelf/form_example.html", {"form": form})
 
