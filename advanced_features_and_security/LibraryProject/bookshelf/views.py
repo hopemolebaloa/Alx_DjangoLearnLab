@@ -43,3 +43,13 @@ def delete_book(request, book_id):
         return redirect("view_books")
     return render(request, "relationship_app/delete_book.html", {"book": book})
 
+# View to list all books (Requires 'can_view' permission)
+@permission_required('bookshelf.can_view', raise_exception=True)
+def book_list(request):
+    """
+    This view allows users to see the list of books.
+    Only users with 'can_view' permission can access this page.
+    """
+    books = Book.objects.all()
+    return render(request, "bookshelf/book_list.html", {"books": books})
+
