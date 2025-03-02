@@ -151,3 +151,25 @@ SECURE_SSL_REDIRECT = True
 
 # SECURITY: Disable default admin interface if unnecessary
 INSTALLED_APPS.remove('django.contrib.admin') if os.getenv('DISABLE_ADMIN') else None
+# SECURITY: Redirect all HTTP traffic to HTTPS
+SECURE_SSL_REDIRECT = True  # Forces HTTPS
+
+# SECURITY: Enable HTTP Strict Transport Security (HSTS)
+SECURE_HSTS_SECONDS = 31536000  # 1 year
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True  # Apply HSTS to all subdomains
+SECURE_HSTS_PRELOAD = True  # Enable HSTS Preload
+
+# SECURITY: Ensure secure cookies
+SESSION_COOKIE_SECURE = True  # Ensures session cookies are sent over HTTPS
+CSRF_COOKIE_SECURE = True  # Ensures CSRF cookies are sent over HTTPS
+
+# SECURITY: Secure HTTP Headers
+X_FRAME_OPTIONS = "DENY"  # Protect against clickjacking
+SECURE_CONTENT_TYPE_NOSNIFF = True  # Prevent content-type sniffing
+SECURE_BROWSER_XSS_FILTER = True  # Enable browser XSS protection
+
+# SECURITY: Ensure Django knows it's behind a proxy (for deployments)
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# SECURITY: Allowed Hosts - Replace 'yourdomain.com' with your actual domain
+ALLOWED_HOSTS = ["yourdomain.com", "127.0.0.1"]
