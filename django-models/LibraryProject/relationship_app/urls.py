@@ -6,10 +6,3 @@ urlpatterns = [
     path("edit_book/<int:book_id>/", edit_book, name="edit_book"),  # Corrected URL path
     path("delete_book/<int:book_id>/", delete_book, name="delete_book"),
 ]
-
-
-
-
-
-
-

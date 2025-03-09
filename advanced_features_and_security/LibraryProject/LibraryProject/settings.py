@@ -31,13 +31,13 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',  # Authentication system
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'relationship_app',
+    "django.contrib.admin",
+    "django.contrib.auth",  # Authentication system
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "relationship_app",
 ]
 
 
@@ -130,11 +130,11 @@ import os
 DEBUG = False  # Ensure this is False in production
 
 # SECURITY: Restrict allowed hosts
-ALLOWED_HOSTS = ['yourdomain.com', '127.0.0.1']
+ALLOWED_HOSTS = ["yourdomain.com", "127.0.0.1"]
 
 # SECURITY: Prevent XSS attacks
 SECURE_BROWSER_XSS_FILTER = True
-X_FRAME_OPTIONS = 'DENY'
+X_FRAME_OPTIONS = "DENY"
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
 # SECURITY: Secure Cookies
@@ -150,7 +150,7 @@ SECURE_HSTS_PRELOAD = True
 SECURE_SSL_REDIRECT = True
 
 # SECURITY: Disable default admin interface if unnecessary
-INSTALLED_APPS.remove('django.contrib.admin') if os.getenv('DISABLE_ADMIN') else None
+INSTALLED_APPS.remove("django.contrib.admin") if os.getenv("DISABLE_ADMIN") else None
 # SECURITY: Redirect all HTTP traffic to HTTPS
 SECURE_SSL_REDIRECT = True  # Forces HTTPS
 

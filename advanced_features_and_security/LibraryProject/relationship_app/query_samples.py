@@ -7,6 +7,7 @@ django.setup()
 
 from relationship_app.models import Author, Book, Library, Librarian
 
+
 # Query 1: Get all books by a specific author
 def get_books_by_author(author_name):
     try:
@@ -16,6 +17,7 @@ def get_books_by_author(author_name):
     except Author.DoesNotExist:
         return "Author not found."
 
+
 # Query 2: List all books in a library
 def get_books_in_library(library_name):
     try:
@@ -23,6 +25,7 @@ def get_books_in_library(library_name):
         return library.books.all()
     except Library.DoesNotExist:
         return "Library not found."
+
 
 # ✅ Query 3: Retrieve the librarian for a library (FIXED)
 def get_librarian_of_library(library_name):
@@ -32,6 +35,7 @@ def get_librarian_of_library(library_name):
         return librarian
     except (Library.DoesNotExist, Librarian.DoesNotExist):
         return "Library or Librarian not found."
+
 
 if __name__ == "__main__":
     # Sample Data Insertion
