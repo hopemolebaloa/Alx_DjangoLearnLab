@@ -1,117 +1,104 @@
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
-from django.urls import reverse_lazy
-from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework import generics, permissions, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from .models import Author, Book
 from .serializers import AuthorSerializer, BookSerializer
 
-# REST Framework ViewSets
-class AuthorViewSet(viewsets.ModelViewSet):
+# Generic views for Book model
+class BookListView(generics.ListAPIView):
     """
-    ViewSet for viewing and editing Author instances via API.
-    Includes nested serialization of related books.
+    API view to retrieve list of books.
+    Allows any user to access (read-only).
+    """
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+    permission_classes = [permissions.AllowAny]
     
-    Authentication:
-    - GET requests are accessible by anyone
-    - POST, PUT, PATCH, DELETE require authenticated users
-    """
-    queryset = Author.objects.all()
-    serializer_class = AuthorSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    def get_queryset(self):
+        """
+        Optionally restricts the returned books by filtering
+        against query parameters in the URL.
+        """
+        queryset = Book.objects.all()
+        title = self.request.query_params.get('title', None)
+        year = self.request.query_params.get('year', None)
+        
+        if title is not None:
+            queryset = queryset.filter(title__icontains=title)
+        if year is not None:
+            queryset = queryset.filter(publication_year=year)
+            
+        return queryset
 
-class BookViewSet(viewsets.ModelViewSet):
+class BookDetailView(generics.RetrieveAPIView):
     """
-    ViewSet for viewing and editing Book instances via API.
-    
-    Authentication:
-    - All operations require user authentication
+    API view to retrieve a specific book by ID.
+    Allows any user to access (read-only).
+    """
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+    permission_classes = [permissions.AllowAny]
+
+class BookCreateView(generics.CreateAPIView):
+    """
+    API view to create a new book.
+    Only accessible to authenticated users.
     """
     queryset = Book.objects.all()
     serializer_class = BookSerializer
     permission_classes = [IsAuthenticated]
+    
+    def perform_create(self, serializer):
+        """
+        Override perform_create to add additional logic when saving.
+        """
+        serializer.save()
+        # Additional logic can be added here if needed
 
-# Traditional Django Class-Based Views for Authors
-class AuthorListView(ListView):
+class BookUpdateView(generics.UpdateAPIView):
     """
-    View for displaying a list of all authors.
+    API view to update an existing book.
+    Only accessible to authenticated users.
     """
-    model = Author
-    template_name = 'api/author_list.html'
-    context_object_name = 'authors'
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def perform_update(self, serializer):
+        """
+        Override perform_update to add custom logic during update.
+        """
+        # Example: You could add logging or notifications here
+        serializer.save()
 
-class AuthorDetailView(DetailView):
+class BookDeleteView(generics.DestroyAPIView):
     """
-    View for displaying details of a specific author.
+    API view to delete a book.
+    Only accessible to authenticated users.
     """
-    model = Author
-    template_name = 'api/author_detail.html'
-    context_object_name = 'author'
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def perform_destroy(self, instance):
+        """
+        Override perform_destroy to add custom logic during deletion.
+        """
+        # Example: You could add logging or cleanup operations here
+        instance.delete()
+        
+# Keep the ViewSets we had before as alternatives
+class BookViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet that provides default operations for Book model.
+    """
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
-class AuthorCreateView(CreateView):
-    """
-    View for creating a new author.
-    """
-    model = Author
-    template_name = 'api/author_form.html'
-    fields = ['name']
-    success_url = reverse_lazy('author-list')
-
-class AuthorUpdateView(UpdateView):
-    """
-    View for updating an existing author.
-    """
-    model = Author
-    template_name = 'api/author_form.html'
-    fields = ['name']
-    success_url = reverse_lazy('author-list')
-
-class AuthorDeleteView(DeleteView):
-    """
-    View for deleting an author.
-    """
-    model = Author
-    template_name = 'api/author_confirm_delete.html'
-    success_url = reverse_lazy('author-list')
-
-# Traditional Django Class-Based Views for Books
-class BookListView(ListView):
-    """
-    View for displaying a list of all books.
-    """
-    model = Book
-    template_name = 'api/book_list.html'
-    context_object_name = 'books'
-
-class BookDetailView(DetailView):
-    """
-    View for displaying details of a specific book.
-    """
-    model = Book
-    template_name = 'api/book_detail.html'
-    context_object_name = 'book'
-
-class BookCreateView(CreateView):
-    """
-    View for creating a new book.
-    """
-    model = Book
-    template_name = 'api/book_form.html'
-    fields = ['title', 'publication_year', 'author']
-    success_url = reverse_lazy('book-list')
-
-class BookUpdateView(UpdateView):
-    """
-    View for updating an existing book.
-    """
-    model = Book
-    template_name = 'api/book_form.html'
-    fields = ['title', 'publication_year', 'author']
-    success_url = reverse_lazy('book-list')
-
-class BookDeleteView(DeleteView):
-    """
-    View for deleting a book.
-    """
-    model = Book
-    template_name = 'api/book_confirm_delete.html'
-    success_url = reverse_lazy('book-list')
+# We'll keep the Author views as they were...
+class AuthorViewSet(viewsets.ModelViewSet):
+    queryset = Author.objects.all()
+    serializer_class = AuthorSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]

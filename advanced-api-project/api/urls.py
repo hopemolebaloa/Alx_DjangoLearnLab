@@ -2,31 +2,25 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     AuthorViewSet, BookViewSet,
-    AuthorListView, AuthorDetailView, AuthorCreateView, AuthorUpdateView, AuthorDeleteView,
     BookListView, BookDetailView, BookCreateView, BookUpdateView, BookDeleteView
 )
 
-# REST Framework router
+# Router for ViewSets
 router = DefaultRouter()
 router.register(r'authors', AuthorViewSet)
-router.register(r'books', BookViewSet)
+router.register(r'viewset/books', BookViewSet)
 
-# URL patterns for both API and traditional views
 urlpatterns = [
-    # REST API URLs
-    path('api/', include(router.urls)),
+    # Include the router URLs
+    path('', include(router.urls)),
     
-    # Traditional Django URLs for Authors
-    path('authors/', AuthorListView.as_view(), name='author-list'),
-    path('authors/<int:pk>/', AuthorDetailView.as_view(), name='author-detail'),
-    path('authors/new/', AuthorCreateView.as_view(), name='author-create'),
-    path('authors/<int:pk>/edit/', AuthorUpdateView.as_view(), name='author-update'),
-    path('authors/<int:pk>/delete/', AuthorDeleteView.as_view(), name='author-delete'),
-    
-    # Traditional Django URLs for Books
+    # Generic class-based view URLs for books
     path('books/', BookListView.as_view(), name='book-list'),
     path('books/<int:pk>/', BookDetailView.as_view(), name='book-detail'),
-    path('books/create/', BookCreateView.as_view(), name='book-create'),  # Changed from 'new' to 'create'
-    path('books/update/<int:pk>/', BookUpdateView.as_view(), name='book-update'),  # Changed format
-    path('books/delete/<int:pk>/', BookDeleteView.as_view(), name='book-delete'),  # Changed format
+    path('books/create/', BookCreateView.as_view(), name='book-create'),
+    path('books/update/<int:pk>/', BookUpdateView.as_view(), name='book-update'),
+    path('books/delete/<int:pk>/', BookDeleteView.as_view(), name='book-delete'),
+    
+    # Authentication URLs
+    path('api-auth/', include('rest_framework.authtoken.urls')),
 ]
