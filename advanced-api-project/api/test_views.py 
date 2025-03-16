@@ -1,0 +1,275 @@
+from rest_framework.test import APITestCase, APIClient
+from rest_framework import status
+from django.urls import reverse
+from django.contrib.auth.models import User
+from api.models import Book, Author, Genre
+from django.test.utils import override_settings
+import json
+
+# Override the default database settings for tests
+@override_settings(
+    DATABASES={
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',  # Use in-memory database for tests
+        }
+    }
+)
+class BookAPITests(APITestCase):
+    def setUp(self):
+        """
+        Setup method to create test data before each test method is executed.
+        """
+        # Create a test user for authentication tests
+        self.user = User.objects.create_user(
+            username='testuser', 
+            email='test@example.com', 
+            password='testpassword123'
+        )
+        
+        # Create test admin user with staff privileges
+        self.admin_user = User.objects.create_user(
+            username='adminuser',
+            email='admin@example.com',
+            password='adminpassword123',
+            is_staff=True
+        )
+        
+        # Create test data: Authors, Genres, and Books
+        self.author1 = Author.objects.create(
+            name='J.K. Rowling',
+            bio='British author known for the Harry Potter series.'
+        )
+        
+        self.author2 = Author.objects.create(
+            name='George Orwell',
+            bio='English novelist known for Animal Farm and 1984.'
+        )
+        
+        self.genre1 = Genre.objects.create(name='Fantasy')
+        self.genre2 = Genre.objects.create(name='Dystopian')
+        
+        # Create some books
+        self.book1 = Book.objects.create(
+            title='Harry Potter and the Philosopher\'s Stone',
+            description='The first book in the Harry Potter series.',
+            publication_date='1997-06-26',
+            isbn='9780747532699',
+            price=19.99
+        )
+        self.book1.authors.add(self.author1)
+        self.book1.genres.add(self.genre1)
+        
+        self.book2 = Book.objects.create(
+            title='1984',
+            description='A dystopian novel about totalitarianism.',
+            publication_date='1949-06-08',
+            isbn='9780451524935',
+            price=12.99
+        )
+        self.book2.authors.add(self.author2)
+        self.book2.genres.add(self.genre2)
+        
+        # Set up API client
+        self.client = APIClient()
+        
+        # URLs
+        self.book_list_url = reverse('book-list')
+        self.book1_detail_url = reverse('book-detail', kwargs={'pk': self.book1.pk})
+        self.book2_detail_url = reverse('book-detail', kwargs={'pk': self.book2.pk})
+        
+    def test_get_all_books(self):
+        """
+        Test retrieving all books as an unauthenticated user.
+        """
+        response = self.client.get(self.book_list_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)  # We should have 2 books
+        
+    def test_get_book_detail(self):
+        """
+        Test retrieving a single book detail.
+        """
+        response = self.client.get(self.book1_detail_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['title'], self.book1.title)
+        self.assertEqual(response.data['isbn'], self.book1.isbn)
+        
+    def test_create_book_unauthenticated(self):
+        """
+        Test that unauthenticated users cannot create books.
+        """
+        new_book_data = {
+            'title': 'New Test Book',
+            'description': 'A book for testing',
+            'publication_date': '2023-01-01',
+            'isbn': '1234567890123',
+            'price': 15.99,
+            'authors': [self.author1.id],
+            'genres': [self.genre1.id]
+        }
+        
+        response = self.client.post(
+            self.book_list_url, 
+            data=new_book_data,
+            format='json'
+        )
+        
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        
+    def test_create_book_authenticated(self):
+        """
+        Test that authenticated users can create books.
+        """
+        self.client.force_authenticate(user=self.user)
+        
+        new_book_data = {
+            'title': 'New Test Book',
+            'description': 'A book for testing',
+            'publication_date': '2023-01-01',
+            'isbn': '1234567890123',
+            'price': 15.99,
+            'authors': [self.author1.id],
+            'genres': [self.genre1.id]
+        }
+        
+        response = self.client.post(
+            self.book_list_url, 
+            data=new_book_data,
+            format='json'
+        )
+        
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Book.objects.count(), 3)
+        self.assertEqual(response.data['title'], 'New Test Book')
+        
+    def test_update_book(self):
+        """
+        Test updating a book as an authenticated user.
+        """
+        self.client.force_authenticate(user=self.user)
+        
+        updated_data = {
+            'title': 'Updated Book Title',
+            'description': self.book1.description,
+            'publication_date': self.book1.publication_date,
+            'isbn': self.book1.isbn,
+            'price': 25.99,  # Updated price
+            'authors': [self.author1.id],
+            'genres': [self.genre1.id]
+        }
+        
+        response = self.client.put(
+            self.book1_detail_url,
+            data=updated_data,
+            format='json'
+        )
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.book1.refresh_from_db()
+        self.assertEqual(self.book1.title, 'Updated Book Title')
+        self.assertEqual(float(self.book1.price), 25.99)
+        
+    def test_partial_update_book(self):
+        """
+        Test partially updating a book with PATCH request.
+        """
+        self.client.force_authenticate(user=self.user)
+        
+        patch_data = {
+            'title': 'Partially Updated Title'
+        }
+        
+        response = self.client.patch(
+            self.book1_detail_url,
+            data=patch_data,
+            format='json'
+        )
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.book1.refresh_from_db()
+        self.assertEqual(self.book1.title, 'Partially Updated Title')
+        
+    def test_delete_book_unauthenticated(self):
+        """
+        Test that unauthenticated users cannot delete books.
+        """
+        response = self.client.delete(self.book1_detail_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertTrue(Book.objects.filter(pk=self.book1.pk).exists())
+        
+    def test_delete_book_authenticated(self):
+        """
+        Test that authenticated users can delete books.
+        """
+        self.client.force_authenticate(user=self.user)
+        
+        response = self.client.delete(self.book1_detail_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Book.objects.filter(pk=self.book1.pk).exists())
+        
+    def test_filter_books_by_author(self):
+        """
+        Test filtering books by author.
+        """
+        url = f"{self.book_list_url}?author={self.author1.id}"
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['title'], self.book1.title)
+        
+    def test_filter_books_by_genre(self):
+        """
+        Test filtering books by genre.
+        """
+        url = f"{self.book_list_url}?genre={self.genre2.id}"
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['title'], self.book2.title)
+        
+    def test_search_books(self):
+        """
+        Test searching books by title.
+        """
+        url = f"{self.book_list_url}?search=Harry"
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['title'], self.book1.title)
+        
+    def test_order_books_by_price_ascending(self):
+        """
+        Test ordering books by price in ascending order.
+        """
+        url = f"{self.book_list_url}?ordering=price"
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]['title'], self.book2.title)  # 1984 should be first (cheaper)
+        self.assertEqual(response.data[1]['title'], self.book1.title)  # Harry Potter should be second (more expensive)
+        
+    def test_order_books_by_price_descending(self):
+        """
+        Test ordering books by price in descending order.
+        """
+        url = f"{self.book_list_url}?ordering=-price"
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]['title'], self.book1.title)  # Harry Potter should be first (more expensive)
+        self.assertEqual(response.data[1]['title'], self.book2.title)  # 1984 should be second (cheaper)
+        
+    def test_order_books_by_publication_date(self):
+        """
+        Test ordering books by publication date.
+        """
+        url = f"{self.book_list_url}?ordering=publication_date"
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]['title'], self.book2.title)  # 1984 should be first (older)
+        self.assertEqual(response.data[1]['title'], self.book1.title)  # Harry Potter should be second (newer)
