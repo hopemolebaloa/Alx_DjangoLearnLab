@@ -1,6 +1,7 @@
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from .models import Author, Book
 from .serializers import AuthorSerializer, BookSerializer
 
@@ -9,16 +10,25 @@ class AuthorViewSet(viewsets.ModelViewSet):
     """
     ViewSet for viewing and editing Author instances via API.
     Includes nested serialization of related books.
+    
+    Authentication:
+    - GET requests are accessible by anyone
+    - POST, PUT, PATCH, DELETE require authenticated users
     """
     queryset = Author.objects.all()
     serializer_class = AuthorSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 class BookViewSet(viewsets.ModelViewSet):
     """
     ViewSet for viewing and editing Book instances via API.
+    
+    Authentication:
+    - All operations require user authentication
     """
     queryset = Book.objects.all()
     serializer_class = BookSerializer
+    permission_classes = [IsAuthenticated]
 
 # Traditional Django Class-Based Views for Authors
 class AuthorListView(ListView):
