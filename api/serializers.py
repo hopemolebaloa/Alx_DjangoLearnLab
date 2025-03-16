@@ -16,3 +16,4 @@ class AuthorSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'books']
 
     # Handle nested relationships: Books will be nested within the Author's data.
+
