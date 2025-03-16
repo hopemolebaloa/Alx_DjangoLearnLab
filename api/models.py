@@ -1,18 +1,17 @@
 from django.db import models
-from django.utils import timezone
 
-# Author model to store author details
+# Author model: Represents an author of books.
 class Author(models.Model):
-    name = models.CharField(max_length=100)  # Stores the author's name
+    name = models.CharField(max_length=100)
 
     def __str__(self):
         return self.name
 
-# Book model with a foreign key to Author for a one-to-many relationship
+# Book model: Represents a book with its title, publication year, and author.
 class Book(models.Model):
-    title = models.CharField(max_length=200)  # Stores the book's title
-    publication_year = models.IntegerField()  # Year the book was published
-    author = models.ForeignKey(Author, on_delete=models.CASCADE)  # Links to Author
+    title = models.CharField(max_length=200)
+    publication_year = models.IntegerField()
+    author = models.ForeignKey(Author, on_delete=models.CASCADE, related_name='books')
 
     def __str__(self):
-        return f"{self.title} by {self.author.name}"
+        return self.title 
