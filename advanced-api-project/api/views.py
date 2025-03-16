@@ -4,7 +4,6 @@ from rest_framework import generics, viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
-from rest_framework.filters import SearchFilter
 from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Author, Book
@@ -35,7 +34,7 @@ class BookListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     
     # Configure filter backends
-    filter_backends = [DjangoFilterBackend, SearchFilter, filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     
     # Set up filterset class for advanced filtering
     filterset_class = BookFilter
