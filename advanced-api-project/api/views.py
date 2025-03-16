@@ -4,39 +4,55 @@ from rest_framework import generics, viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.filters import SearchFilter, OrderingFilter
+from django_filters.rest_framework import DjangoFilterBackend
 from .models import Author, Book
 from .serializers import AuthorSerializer, BookSerializer
+from .filters import BookFilter
 
-# Generic views for Book model
+# Updated BookListView with filtering, searching, and ordering
 class BookListView(generics.ListAPIView):
     """
-    API view to retrieve list of books.
-    Allows any user to access (read-only).
+    API view to retrieve list of books with filtering, searching and ordering capabilities.
+    
+    Filtering:
+    - Filter by title: ?title=django
+    - Filter by publication_year: ?publication_year=2023
+    - Filter by author ID: ?author=1
+    - Filter by author name: ?author_name=tolkien
+    - Filter by publication year range: ?min_year=2000&max_year=2023
+    
+    Searching:
+    - Search across title and author name: ?search=python
+    
+    Ordering:
+    - Order by any field: ?ordering=publication_year
+    - Reverse ordering: ?ordering=-publication_year
+    - Multiple ordering fields: ?ordering=author__name,publication_year
     """
     queryset = Book.objects.all()
     serializer_class = BookSerializer
     permission_classes = [permissions.AllowAny]
     
-    def get_queryset(self):
-        """
-        Optionally restricts the returned books by filtering
-        against query parameters in the URL.
-        """
-        queryset = Book.objects.all()
-        title = self.request.query_params.get('title', None)
-        year = self.request.query_params.get('year', None)
-        
-        if title is not None:
-            queryset = queryset.filter(title__icontains=title)
-        if year is not None:
-            queryset = queryset.filter(publication_year=year)
-            
-        return queryset
+    # Configure filter backends
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    
+    # Set up filterset class for advanced filtering
+    filterset_class = BookFilter
+    
+    # Set up fields for basic searching
+    search_fields = ['title', 'author__name']
+    
+    # Set up fields for ordering
+    ordering_fields = ['title', 'publication_year', 'author__name']
+    
+    # Default ordering
+    ordering = ['publication_year']
 
+# Keep other views from previous implementation
 class BookDetailView(generics.RetrieveAPIView):
     """
     API view to retrieve a specific book by ID.
-    Allows any user to access (read-only).
     """
     queryset = Book.objects.all()
     serializer_class = BookSerializer
@@ -50,13 +66,6 @@ class BookCreateView(generics.CreateAPIView):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
     permission_classes = [IsAuthenticated]
-    
-    def perform_create(self, serializer):
-        """
-        Override perform_create to add additional logic when saving.
-        """
-        serializer.save()
-        # Additional logic can be added here if needed
 
 class BookUpdateView(generics.UpdateAPIView):
     """
@@ -66,13 +75,6 @@ class BookUpdateView(generics.UpdateAPIView):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
     permission_classes = [IsAuthenticated]
-    
-    def perform_update(self, serializer):
-        """
-        Override perform_update to add custom logic during update.
-        """
-        # Example: You could add logging or notifications here
-        serializer.save()
 
 class BookDeleteView(generics.DestroyAPIView):
     """
@@ -82,25 +84,31 @@ class BookDeleteView(generics.DestroyAPIView):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
     permission_classes = [IsAuthenticated]
-    
-    def perform_destroy(self, instance):
-        """
-        Override perform_destroy to add custom logic during deletion.
-        """
-        # Example: You could add logging or cleanup operations here
-        instance.delete()
-        
-# Keep the ViewSets we had before as alternatives
+
+# Update ViewSet to include filtering as well
 class BookViewSet(viewsets.ModelViewSet):
     """
     ViewSet that provides default operations for Book model.
+    Includes filtering, searching and ordering capabilities.
     """
     queryset = Book.objects.all()
     serializer_class = BookSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = BookFilter
+    search_fields = ['title', 'author__name']
+    ordering_fields = ['title', 'publication_year', 'author__name']
+    ordering = ['publication_year']
 
-# We'll keep the Author views as they were...
+# Author ViewSet with filtering capabilities
 class AuthorViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for viewing and editing Author instances.
+    """
     queryset = Author.objects.all()
     serializer_class = AuthorSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['name']
+    search_fields = ['name']
+    ordering_fields = ['name']

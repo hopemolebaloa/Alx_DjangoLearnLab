@@ -1,15 +1,24 @@
 # Advanced API Project with Django REST Framework
 
-This project demonstrates the implementation of a RESTful API using Django REST Framework, with a focus on custom serializers and generic views.
+This project demonstrates the implementation of a RESTful API using Django REST Framework, with a focus on custom serializers, generic views, and advanced query capabilities.
 
 ## API Endpoints
 
 ### Books API
 
 - **GET /api/books/** - List all books (public)
-  - Supports filtering with query parameters:
-    - `?title=searchterm`
-    - `?year=2023`
+  - **Filtering Options**:
+    - Filter by title: `?title=django`
+    - Filter by publication year: `?publication_year=2023`
+    - Filter by author ID: `?author=1`
+    - Filter by author name: `?author_name=tolkien`
+    - Filter by year range: `?min_year=2000&max_year=2023`
+  - **Search Options**:
+    - Search across title and author name: `?search=python`
+  - **Ordering Options**:
+    - Order by any field: `?ordering=publication_year`
+    - Reverse ordering: `?ordering=-publication_year`
+    - Multiple ordering fields: `?ordering=author__name,publication_year`
 
 - **GET /api/books/{id}/** - Get details of a specific book (public)
 
@@ -23,45 +32,21 @@ This project demonstrates the implementation of a RESTful API using Django REST 
 ### Authors API
 
 - **GET /api/authors/** - List all authors (public)
+  - **Filtering Options**:
+    - Filter by name: `?name=tolkien`
+  - **Search Options**:
+    - Search by name: `?search=tolkien`
+  - **Ordering Options**:
+    - Order by name: `?ordering=name`
+    - Reverse ordering: `?ordering=-name`
+
 - **GET /api/authors/{id}/** - Get details of a specific author (public)
 - **POST /api/authors/** - Create a new author (authenticated users only)
 - **PUT/PATCH /api/authors/{id}/** - Update an author (authenticated users only)
 - **DELETE /api/authors/{id}/** - Delete an author (authenticated users only)
 
-## Authentication
+## Examples
 
-- This API uses token authentication for protected endpoints
-- To obtain a token, send a POST request to `/api-token-auth/` with username and password
-- Include the token in the Authorization header: `Authorization: Token <your_token>`
+### Filtering Examples
 
-## Data Models
-
-### Author
-- `name` (string): The author's name
-
-### Book
-- `title` (string): The book's title
-- `publication_year` (integer): Year when the book was published
-- `author` (foreign key): Reference to an Author object
-
-## Custom Validations
-
-### Book Model Validation
-- Publication year cannot be in the future
-- Publication year cannot be before 1700
-- Title must be at least 3 characters
-- Title cannot contain inappropriate words
-- Books published before 1900 cannot have "Modern" in the title
-
-### Author Model Validation
-- Name must be at least 2 characters long
-- Name cannot contain numbers
-
-## Running the Project
-
-1. Clone the repository
-2. Install dependencies: `pip install -r requirements.txt`
-3. Run migrations: `python manage.py migrate`
-4. Create a superuser: `python manage.py createsuperuser`
-5. Start the server: `python manage.py runserver`
-6. Access the API at http://localhost:8000/api/
+Get all books published after 2020:
