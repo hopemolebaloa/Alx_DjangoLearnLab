@@ -2,19 +2,19 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model, authenticate
 from django.contrib.auth.password_validation import validate_password
-from rest_framework.authtoken.models import Token"
+from rest_framework.authtoken.models import Token
 
 User = get_user_model()
-serializers.CharField()
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     """Serializer for user registration"""
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
+    token = serializers.CharField(read_only=True)  # Add token field
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'first_name', 'last_name', 'password', 'password2', 'bio')
+        fields = ('username', 'email', 'first_name', 'last_name', 'password', 'password2', 'bio', 'token')
         extra_kwargs = {
             'first_name': {'required': True},
             'last_name': {'required': True},
@@ -41,12 +41,23 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
         
+        # Create token for the user
+        token, created = Token.objects.get_or_create(user=user)
+        
         return user
+
+    def to_representation(self, instance):
+        """Override to include the token in the response"""
+        ret = super().to_representation(instance)
+        token, created = Token.objects.get_or_create(user=instance)
+        ret['token'] = token.key
+        return ret
 
 class UserLoginSerializer(serializers.Serializer):
     """Serializer for user login and token retrieval"""
     username = serializers.CharField(max_length=150)
     password = serializers.CharField(write_only=True)
+    token = serializers.CharField(read_only=True)  # Add token field
 
     def validate(self, attrs):
         username = attrs.get('username')
@@ -61,6 +72,9 @@ class UserLoginSerializer(serializers.Serializer):
             raise serializers.ValidationError('Must include "username" and "password".')
 
         attrs['user'] = user
+        # Create token for the user
+        token, created = Token.objects.get_or_create(user=user)
+        attrs['token'] = token.key
         return attrs
 
 class UserProfileSerializer(serializers.ModelSerializer):
