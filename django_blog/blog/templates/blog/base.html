@@ -2,6 +2,10 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <form action="{% url 'blog:search' %}" method="get" class="search-form">
+        <input type="text" name="q" placeholder="Search posts..." required>
+        <button type="submit">Search</button>
+    </form>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">

@@ -1,32 +1,44 @@
 # blog/forms.py
 from django import forms
-from .models import Post, Comment
+from .models import Post, Tag
 
 class PostForm(forms.ModelForm):
+    tags = forms.CharField(required=False, help_text="Enter tags separated by commas")
+    
     class Meta:
         model = Post
-        fields = ['title', 'content']
-
-class CommentForm(forms.ModelForm):
-    content = forms.CharField(
-        widget=forms.Textarea(attrs={'rows': 4, 'placeholder': 'Add a comment...'}),
-        required=True,
-        min_length=3,
-        max_length=1000,
-        label='',
-        error_messages={
-            'required': 'Comment content is required',
-            'min_length': 'Comment must be at least 3 characters long',
-            'max_length': 'Comment cannot exceed 1000 characters'
-        }
-    )
+        fields = ['title', 'content', 'tags']
     
-    class Meta:
-        model = Comment
-        fields = ['content']
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            # If editing an existing post, populate the tags field
+            self.initial['tags'] = ', '.join([tag.name for tag in self.instance.tags.all()])
     
-    def clean_content(self):
-        content = self.cleaned_data.get('content')
-        if content and content.strip() == '':
-            raise forms.ValidationError('Comment cannot be blank or contain only whitespace')
-        return content
+    def save(self, commit=True):
+        post = super().save(commit=False)
+        
+        if commit:
+            post.save()
+            
+            # Clear existing tags
+            post.tags.clear()
+            
+            # Process the tags
+            tag_names = [name.strip() for name in self.cleaned_data['tags'].split(',') if name.strip()]
+            
+            for tag_name in tag_names:
+                # Convert tag name to lowercase and create slug
+                from django.utils.text import slugify
+                tag_slug = slugify(tag_name)
+                
+                # Get or create the tag
+                tag, created = Tag.objects.get_or_create(
+                    slug=tag_slug,
+                    defaults={'name': tag_name}
+                )
+                
+                # Add tag to post
+                post.tags.add(tag)
+        
+        return post

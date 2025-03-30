@@ -1,66 +1,69 @@
 # blog/views.py
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.contrib.auth.decorators import login_required
-from django.views.generic import (
-    ListView,
-    DetailView,
-    CreateView,
-    UpdateView,
-    DeleteView
-)
-from django.urls import reverse_lazy, reverse
-from .models import Post, Comment
-from .forms import CommentForm
+from django.db.models import Q
+from django.shortcuts import get_object_or_404, redirect, render
 
-# Keep your existing Post views...
+from django_blog.blog.forms import PostForm
+from .models import Post, Tag
 
-class PostDetailView(DetailView):
-    model = Post
-    template_name = 'blog/post_detail.html'
+def search_posts(request):
+    query = request.GET.get('q', '')
     
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['comments'] = self.object.comments.all()
-        context['comment_form'] = CommentForm()
-        return context
+    if query:
+        # Search in title, content, or tags
+        posts = Post.objects.filter(
+            Q(title__icontains=query) | 
+            Q(content__icontains=query) |
+            Q(tags__name__icontains=query)
+        ).distinct()
+    else:
+        posts = Post.objects.none()
+    
+    context = {
+        'query': query,
+        'posts': posts,
+    }
+    
+    return render(request, 'blog/search_results.html', context)
 
-# Replace the function-based view with this class-based view
-class CommentCreateView(LoginRequiredMixin, CreateView):
-    model = Comment
-    form_class = CommentForm
-    template_name = 'blog/comment_form.html'
+def tag_posts(request, tag_slug):
+    tag = Tag.objects.get(slug=tag_slug)
+    posts = Post.objects.filter(tags=tag)
     
-    def form_valid(self, form):
-        form.instance.post = get_object_or_404(Post, pk=self.kwargs['pk'])
-        form.instance.author = self.request.user
-        return super().form_valid(form)
+    context = {
+        'tag': tag,
+        'posts': posts,
+    }
     
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['post'] = get_object_or_404(Post, pk=self.kwargs['pk'])
-        return context
+    return render(request, 'blog/tag_posts.html', context)
+# Modify your existing post_create view
+def post_create(request):
+    if request.method == 'POST':
+        form = PostForm(request.POST)
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.author = request.user
+            post.save()
+            form.save()  # This additional save() is needed to save the tags
+            return redirect('blog:post_detail', pk=post.pk)
+    else:
+        form = PostForm()
+    
+    return render(request, 'blog/post_form.html', {'form': form})
 
-class CommentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
-    model = Comment
-    form_class = CommentForm
-    template_name = 'blog/comment_form.html'
+# Modify your existing post_update view
+def post_update(request, pk):
+    post = get_object_or_404(Post, pk=pk)
     
-    def form_valid(self, form):
-        form.instance.author = self.request.user
-        return super().form_valid(form)
+    # Check if the user is the author
+    if post.author != request.user:
+        return redirect('blog:post_detail', pk=pk)
     
-    def test_func(self):
-        comment = self.get_object()
-        return self.request.user == comment.author
-
-class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
-    model = Comment
-    template_name = 'blog/comment_confirm_delete.html'
+    if request.method == 'POST':
+        form = PostForm(request.POST, instance=post)
+        if form.is_valid():
+            form.save()
+            return redirect('blog:post_detail', pk=pk)
+    else:
+        form = PostForm(instance=post)
     
-    def get_success_url(self):
-        return reverse_lazy('post-detail', kwargs={'pk': self.object.post.pk})
-    
-    def test_func(self):
-        comment = self.get_object()
-        return self.request.user == comment.author
+    return render(request, 'blog/post_form.html', {'form': form, 'post': post})
