@@ -21,15 +21,11 @@
     <!-- Comments Section -->
     <div class="content-section">
         <h4>Comments ({{ comments.count }})</h4>
-        <!-- Add Comment Form -->
+        <!-- Add Comment Section -->
         {% if user.is_authenticated %}
             <div class="card mb-4">
                 <div class="card-body">
-                    <form method="POST" action="{% url 'add-comment' object.id %}">
-                        {% csrf_token %}
-                        {{ comment_form|crispy }}
-                        <button type="submit" class="btn btn-primary">Post Comment</button>
-                    </form>
+                    <a href="{% url 'comment-create' object.id %}" class="btn btn-primary">Add Comment</a>
                 </div>
             </div>
         {% else %}
