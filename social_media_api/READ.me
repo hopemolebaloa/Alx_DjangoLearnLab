@@ -1,0 +1,157 @@
+# Social Media API
+
+A robust social media API built with Django and Django REST Framework.
+
+## Project Overview
+
+This API allows users to register, login, create posts, comment on posts, follow other users, and receive notifications for interactions. The API is designed to be scalable, secure, and production-ready.
+
+## Setup Instructions
+
+### Prerequisites
+- Python 3.8+
+- pip
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/your-username/social_media_api.git
+cd social_media_api
+```
+
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+3. Run migrations:
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+4. Create a superuser:
+```bash
+python manage.py createsuperuser
+```
+
+5. Run the development server:
+```bash
+python manage.py runserver
+```
+
+## API Endpoints
+
+### User Authentication
+
+- **Register a new user**
+  - URL: `/api/accounts/register/`
+  - Method: POST
+  - Data Params: 
+    ```json
+    {
+      "username": "johndoe",
+      "email": "john@example.com",
+      "first_name": "John",
+      "last_name": "Doe",
+      "password": "securepassword",
+      "password2": "securepassword",
+      "bio": "My bio here"
+    }
+    ```
+  - Success Response: 
+    ```json
+    {
+      "token": "your-auth-token",
+      "user_id": 1,
+      "username": "johndoe",
+      "email": "john@example.com"
+    }
+    ```
+
+- **Login**
+  - URL: `/api/accounts/login/`
+  - Method: POST
+  - Data Params: 
+    ```json
+    {
+      "username": "johndoe",
+      "password": "securepassword"
+    }
+    ```
+  - Success Response: 
+    ```json
+    {
+      "token": "your-auth-token",
+      "user_id": 1,
+      "username": "johndoe",
+      "email": "john@example.com"
+    }
+    ```
+
+- **Get User Profile**
+  - URL: `/api/accounts/profile/`
+  - Method: GET
+  - Headers: `Authorization: Token your-auth-token`
+  - Success Response: 
+    ```json
+    {
+      "id": 1,
+      "username": "johndoe",
+      "email": "john@example.com",
+      "first_name": "John",
+      "last_name": "Doe",
+      "bio": "My bio here",
+      "profile_picture": null,
+      "follower_count": 0,
+      "following_count": 0,
+      "created_at": "2023-04-15T10:00:00Z",
+      "updated_at": "2023-04-15T10:00:00Z"
+    }
+    ```
+
+- **Update User Profile**
+  - URL: `/api/accounts/profile/`
+  - Method: PATCH
+  - Headers: `Authorization: Token your-auth-token`
+  - Data Params: 
+    ```json
+    {
+      "bio": "Updated bio"
+    }
+    ```
+  - Success Response: User profile with updated fields
+
+## User Model
+
+The custom User model extends Django's AbstractUser and includes additional fields:
+
+- `bio`: Text field for user biography
+- `profile_picture`: Image field for user profile picture
+- `followers`: ManyToMany field for user following relationships
+- `created_at`: Timestamp for when the user account was created
+- `updated_at`: Timestamp for when the user account was last updated
+
+## Authentication
+
+The API uses token-based authentication. After successful registration or login, a token is generated and returned to the client. This token should be included in the headers of subsequent API requests:
+
+```
+Authorization: Token your-auth-token
+```
+
+## Testing
+
+You can test the API using tools like Postman or curl:
+
+```bash
+# Register a new user
+curl -X POST -H "Content-Type: application/json" -d '{"username":"test", "email":"test@example.com", "first_name":"Test", "last_name":"User", "password":"testpassword", "password2":"testpassword"}' http://localhost:8000/api/accounts/register/
+
+# Login
+curl -X POST -H "Content-Type: application/json" -d '{"username":"test", "password":"testpassword"}' http://localhost:8000/api/accounts/login/
+
+# Get profile (replace YOUR_TOKEN with the token received from login)
+curl -X GET -H "Authorization: Token YOUR_TOKEN" http://localhost:8000/api/accounts/profile/
+```
