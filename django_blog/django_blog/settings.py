@@ -136,3 +136,6 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # Media files settings
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / "media"
+# Login redirect settings
+LOGIN_REDIRECT_URL = 'home'
+LOGIN_URL = 'login'
